@@ -10,8 +10,6 @@ on:
 # Security: Explicit minimal permissions
 permissions:
   contents: write  # Only what's needed to create files
-  actions: read
-  checks: read
 
 jobs:
   check-and-create-diary-entry:
@@ -19,16 +17,15 @@ jobs:
     
     # Prevent multiple instances running simultaneously
     concurrency:
-      group: dependabot-diary-${{ github.ref }}
+      group: dependabot-diary-${{ github.ref_name }}
       cancel-in-progress: false
     
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          # Fetch full history for proper date checking
-          fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
+          # Fetch recent history for date checking
+          fetch-depth: 2
       
       - name: Setup Python for random generation
         uses: actions/setup-python@v5
@@ -63,6 +60,7 @@ jobs:
           
           # Generate random content for Dependabot
           python3 << 'EOF'
+
 import random
 import datetime
 import json
@@ -141,8 +139,7 @@ a, b = random.randint(1, 100), random.randint(1, 100)
 operations = [
     f"{a} + {b} = {a + b}",
     f"{a} × {b} = {a * b}",
-    f"√{a**2} = {a}",
-    f"log₂({2**random.randint(1, 10)}) = {random.randint(1, 10)}"
+    f"√{a**2} = {a}"
 ]
 math_fact = random.choice(operations)
 
@@ -235,7 +232,7 @@ EOF
           git config --local user.name "Dependabot's Emotional Support System"
           
           git add dependabot-diary/
-          git commit -m "📓 Dependabot diary entry for ${{ steps.check_diary.outputs.today }}"
+          git commit -m "Add Dependabot diary entry for ${{ steps.check_diary.outputs.today }}"
           
           # Push changes
           git push origin HEAD:${{ github.ref_name }}
