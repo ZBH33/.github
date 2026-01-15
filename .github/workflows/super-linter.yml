@@ -4,37 +4,28 @@
 # You can adjust the behavior by modifying this file.
 # For more information, see:
 # https://github.com/github/super-linter
-name: Lint Codebase (super-linter)
-
-on:
-  push:
-    branches: ["main"]
-  pull_request:
-    branches: ["main"]
-  workflow_dispatch:
-
+name: Lint Code Base
 permissions:
   contents: read
 
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
 jobs:
-  super-linter:
-    name: Super-Linter
+  run-lint:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
         with:
+          # Full git history is needed to get a proper list of changed files within `super-linter`
           fetch-depth: 0
 
-      - name: Run Super-Linter
+      - name: Lint Code Base
         uses: github/super-linter@v4
         env:
-          # Use safe defaults; change to true to validate the entire repository
           VALIDATE_ALL_CODEBASE: false
           DEFAULT_BRANCH: "main"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-# Notes:
-# - This workflow is intentionally minimal and runs only on the default branch and PRs targeting it.
-# - To run the linter for all files and languages, set VALIDATE_ALL_CODEBASE: true.
-
