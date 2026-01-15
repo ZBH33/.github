@@ -36,7 +36,7 @@ jobs:
         run: |
           if [ -n "${GGSHIELD_API_KEY}" ]; then
             echo "GGSHIELD_API_KEY present — running authenticated scan"
-            ggshield scan repo
+            ggshield scan repo --all-secrets https://github.com/ZBH33/.github/
           else
             echo "GGSHIELD_API_KEY not set — running local-only scan"
             ggshield scan repo --no-git
