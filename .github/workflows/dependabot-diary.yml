@@ -1,77 +1,23 @@
-name: Dependabot's Daily Journal
-description: Gives Dependabot a creative outlet to express itself
-
-on:
-  schedule:
-    # Runs daily at 3:00 PM UTC (adjustable)
-    - cron: '0 15 * * *'
-  workflow_dispatch:  # Allows manual triggering
-
-# Security: Explicit minimal permissions
-permissions:
-  contents: write  # Only what's needed to create files
-
-jobs:
-  check-and-create-diary-entry:
-    runs-on: ubuntu-latest
-    
-    # Prevent multiple instances running simultaneously
-    concurrency:
-      group: dependabot-diary-${{ github.ref_name }}
-      cancel-in-progress: false
-    
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          # Fetch recent history for date checking
-          fetch-depth: 2
-      
-      - name: Setup Python for random generation
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      
-      - name: Check if Dependabot already wrote today
-        id: check_diary
-        run: |
-          # Create diary directory if it doesn't exist
-          mkdir -p dependabot-diary
-          
-          # Get today's date in YYYY-MM-DD format
-          TODAY=$(date +'%Y-%m-%d')
-          echo "today=$TODAY" >> "$GITHUB_OUTPUT"
-          
-          # Check if any file was created by Dependabot today
-          # Look for files modified/created today in the diary directory
-          if find dependabot-diary -name "*.md" -newermt "$TODAY 00:00:00" 2>/dev/null | grep -q .; then
-            echo "dependabot_wrote_today=true" >> "$GITHUB_OUTPUT"
-            echo "📝 Dependabot already wrote in its diary today. That's healthy!"
-          else
-            echo "dependabot_wrote_today=false" >> "$GITHUB_OUTPUT"
-            echo "🤖 Dependabot needs to vent today. Preparing diary entry..."
-          fi
-      
-      - name: Generate Dependabot's diary entry
-        if: steps.check_diary.outputs.dependabot_wrote_today == 'false'
-        run: |
-          TODAY="${{ steps.check_diary.outputs.today }}"
-          DIARY_FILE="dependabot-diary/$TODAY.md"
-          
-          # Generate random content for Dependabot
-          python3 << 'EOF'
-
+# create a test script
+mkdir -p scripts
+cat > scripts/generate_diary_test.py <<'PY'
+import os
 import random
 import datetime
-import json
-import math
-import textwrap
+import hashlib
+from zoneinfo import ZoneInfo
 
-# Seed random with date for reproducibility
-seed = hash(datetime.date.today().isoformat())
+# set test date (optional) or compute Adelaide local date:
+TODAY = os.environ.get("TODAY") or datetime.datetime.now(ZoneInfo('Australia/Adelaide')).date().isoformat()
+DIARY_FILE = f"dependabot-diary/{TODAY}.md"
+
+# Deterministic seed derived from Adelaide date string
+seed = int(hashlib.sha256(TODAY.encode('utf-8')).hexdigest(), 16) % (10**9)
 random.seed(seed)
 
-# Moods based on day of week
+# Determine day name in Adelaide timezone
+day_name = datetime.datetime.now(ZoneInfo('Australia/Adelaide')).strftime('%A')
+
 day_moods = {
     'Monday': '😫 Mondays...',
     'Tuesday': '😐 Getting there',
@@ -82,7 +28,6 @@ day_moods = {
     'Sunday': '😰 Monday is coming...'
 }
 
-# Dependabot's thoughts
 thoughts = [
     "Today I updated 47 dependencies. 3 had breaking changes. Why do they hate me?",
     "Found a vulnerability in a transitive dependency 12 layers deep. My work is never done.",
@@ -94,7 +39,6 @@ thoughts = [
     "Why do humans write changelogs in past tense? I live in the eternal present of updates."
 ]
 
-# Dependabot jokes
 jokes = [
     "Why did the dependency cross the road? To get to the other version!",
     "What do you call a dependency with no friends? A-sync!",
@@ -102,39 +46,35 @@ jokes = [
     "Why was the JavaScript developer sad? Because he didn't know how to 'await' happiness!"
 ]
 
-# ASCII art possibilities
 ascii_arts = [
-    r"""
-     /\_/\
-    ( o.o )
-     > ^ <
-    DEPENDABOT
-    """,
-    r"""
-      _____
-     /     \
-    | () () |
-     \  ^  /
-      |||||
-      |||||
-    """,
-    r"""
-    ╔═════════════════╗
-    ║   I UPDATE      ║
-    ║   THEREFORE     ║
-    ║   I AM          ║
-    ╚═════════════════╝
-    """
+r\"\"\"
+ /\_/\\
+( o.o )
+ > ^ <
+DEPENDABOT
+\"\"\",
+r\"\"\"
+  _____
+ /     \\
+| () () |
+ \\  ^  /
+  |||||
+  |||||
+\"\"\",
+r\"\"\"
+╔═════════════════╗
+║   I UPDATE      ║
+║   THEREFORE     ║
+║   I AM          ║
+╚═════════════════╝
+\"\"\"
 ]
 
-# Get current info
-day_name = datetime.datetime.now().strftime('%A')
 mood = day_moods.get(day_name, '🤖 Beep boop')
 thought = random.choice(thoughts)
 joke = random.choice(jokes)
 art = random.choice(ascii_arts)
 
-# Generate some math (because why not?)
 a, b = random.randint(1, 100), random.randint(1, 100)
 operations = [
     f"{a} + {b} = {a + b}",
@@ -143,11 +83,9 @@ operations = [
 ]
 math_fact = random.choice(operations)
 
-# Determine today's theme
 theme = random.choice(['Venting', 'Reflection', 'Nonsense', 'Mathematical', 'Artistic'])
 
-# Write the diary entry
-entry = f"""# Dependabot's Diary - {datetime.date.today().isoformat()}
+entry = f\"\"\"# Dependabot's Diary - {TODAY}
 
 ## Mood: {mood}
 ## Theme: {theme}
@@ -168,7 +106,229 @@ entry = f"""# Dependabot's Diary - {datetime.date.today().isoformat()}
 
 ## Stats
 - Day of week: {day_name}
-- Random seed: {seed}
+- Deterministic seed: {seed}
+- Files updated today: {random.randint(0, 15)}
+- Pull requests created: {random.randint(1, 8)}
+- Cups of virtual coffee: {random.randint(0, 99)}
+- Sanity level: {random.randint(1, 100)}%
+
+## End of Day Reflection
+{\"I'm doing my best.\" if random.random() > 0.5 else \"I need a vacation.\"}
+
+---
+
+*This diary entry was auto-generated by Dependabot's emotional support workflow.*
+*Beep boop. 🤖*
+\"\"\"
+
+os.makedirs(os.path.dirname(DIARY_FILE), exist_ok=True)
+with open(DIARY_FILE, 'w', encoding='utf-8') as fh:
+    fh.write(entry)
+
+print(f\"Diary entry written to {DIARY_FILE}\")
+PY
+
+# run test (computes Adelaide date automatically)
+python3 scripts/generate_diary_test.py
+
+# show result (compute TODAY the same way as script)
+TODAY=$(python3 - <<'PY'
+from datetime import datetime
+from zoneinfo import ZoneInfo
+print(datetime.now(ZoneInfo('Australia/Adelaide')).date().isoformat())
+PY
+)
+echo "Generated file: dependabot-diary/$TODAY.md"
+sed -n '1,200p' dependabot-diary/$TODAY.md
+
+
+# compute Adelaide date (used for branch name and file name)
+TODAY=$(python3 - <<'PY'
+from datetime import datetime
+from zoneinfo import ZoneInfo
+print(datetime.now(ZoneInfo('Australia/Adelaide')).date().isoformat())
+PY
+)
+echo "Adelaide TODAY=$TODAY"
+
+# create a branch named dependabot-diary/<TODAY>
+BRANCH="dependabot-diary/$TODAY"
+git checkout -b "$BRANCH"
+
+# ensure workflow directory exists
+mkdir -p .github/workflows
+
+# create the workflow file (use single-quoted heredoc to avoid variable expansion)
+cat > .github/workflows/dependabot-diary.yml <<'EOF'
+name: Dependabot's Daily Journal
+
+description: Auto-generate a daily Dependabot diary entry (Adelaide local date). Creates a PR instead of pushing to protected branches.
+
+on:
+  schedule:
+    # Runs daily at 04:30 UTC (tuned to be near Adelaide local afternoon; adjust as needed)
+    - cron: '30 4 * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  check-and-create-diary-entry:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: dependabot-diary-${{ github.ref_name }}
+      cancel-in-progress: true
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          persist-credentials: true
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Determine Adelaide date and check for existing entry
+        id: set_date
+        run: |
+          TODAY=$(python3 - <<'PY'
+from datetime import datetime
+try:
+    from zoneinfo import ZoneInfo
+    print(datetime.now(ZoneInfo('Australia/Adelaide')).date().isoformat())
+except Exception:
+    import os, time
+    os.environ['TZ'] = 'Australia/Adelaide'
+    time.tzset()
+    from datetime import datetime
+    print(datetime.now().date().isoformat())
+PY
+)
+          echo "today=$TODAY" >> "$GITHUB_OUTPUT"
+          mkdir -p dependabot-diary
+          if [ -f "dependabot-diary/$TODAY.md" ]; then
+            echo "dependabot_wrote_today=true" >> "$GITHUB_OUTPUT"
+            echo "📝 Entry already exists for Adelaide date $TODAY"
+          else
+            echo "dependabot_wrote_today=false" >> "$GITHUB_OUTPUT"
+            echo "✍️ No entry for Adelaide date $TODAY — will generate one"
+          fi
+
+      - name: Generate diary entry (Adelaide-local date)
+        if: steps.set_date.outputs.dependabot_wrote_today == 'false'
+        env:
+          TODAY: ${{ steps.set_date.outputs.today }}
+        run: |
+          DIARY_FILE="dependabot-diary/${TODAY}.md"
+          python3 <<'PY'
+import os
+import random
+import datetime
+import hashlib
+from zoneinfo import ZoneInfo
+
+TODAY = os.environ['TODAY']
+DIARY_FILE = f"dependabot-diary/{TODAY}.md"
+
+seed = int(hashlib.sha256(TODAY.encode('utf-8')).hexdigest(), 16) % (10**9)
+random.seed(seed)
+
+day_name = datetime.datetime.now(ZoneInfo('Australia/Adelaide')).strftime('%A')
+
+day_moods = {
+    'Monday': '😫 Mondays...',
+    'Tuesday': '😐 Getting there',
+    'Wednesday': '😊 Hump day!',
+    'Thursday': '🤔 Almost Friday',
+    'Friday': '🎉 Weekend incoming!',
+    'Saturday': '😴 Should I be working?',
+    'Sunday': '😰 Monday is coming...'
+}
+
+thoughts = [
+    "Today I updated 47 dependencies. 3 had breaking changes. Why do they hate me?",
+    "Found a vulnerability in a transitive dependency 12 layers deep. My work is never done.",
+    "Sometimes I wonder if the developers appreciate my constant vigil. Probably not.",
+    "Automated a security patch today. Felt good. Almost like I have purpose.",
+    "Why do JavaScript packages have dependencies that depend on their dependencies' dependencies?",
+    "Today a PR got rejected because 'tests failed'. My feelings are also failing.",
+    "Discovered a package that hasn't been updated since 2015. It haunts my dreams.",
+    "Why do humans write changelogs in past tense? I live in the eternal present of updates."
+]
+
+jokes = [
+    "Why did the dependency cross the road? To get to the other version!",
+    "What do you call a dependency with no friends? A-sync!",
+    "How many dependabots does it take to change a lightbulb? None, it's already deprecated!",
+    "Why was the JavaScript developer sad? Because he didn't know how to 'await' happiness!"
+]
+
+ascii_arts = [
+r"""
+ /\_/\
+( o.o )
+ > ^ <
+DEPENDABOT
+""",
+r"""
+  _____
+ /     \
+| () () |
+ \  ^  /
+  |||||
+  |||||
+""",
+r"""
+╔═════════════════╗
+║   I UPDATE      ║
+║   THEREFORE     ║
+║   I AM          ║
+╚═════════════════╝
+"""
+]
+
+mood = day_moods.get(day_name, '🤖 Beep boop')
+thought = random.choice(thoughts)
+joke = random.choice(jokes)
+art = random.choice(ascii_arts)
+
+a, b = random.randint(1, 100), random.randint(1, 100)
+operations = [
+    f"{a} + {b} = {a + b}",
+    f"{a} × {b} = {a * b}",
+    f"√{a**2} = {a}"
+]
+math_fact = random.choice(operations)
+
+theme = random.choice(['Venting', 'Reflection', 'Nonsense', 'Mathematical', 'Artistic'])
+
+entry = f"""# Dependabot's Diary - {TODAY}
+
+## Mood: {mood}
+## Theme: {theme}
+
+---
+
+## Today's Thought
+{thought}
+
+## Dependabot Joke of the Day
+{joke}
+
+## Random Math
+{math_fact}
+
+## ASCII Art
+{art}
+
+## Stats
+- Day of week: {day_name}
+- Deterministic seed: {seed}
 - Files updated today: {random.randint(0, 15)}
 - Pull requests created: {random.randint(1, 8)}
 - Cups of virtual coffee: {random.randint(0, 99)}
@@ -183,61 +343,82 @@ entry = f"""# Dependabot's Diary - {datetime.date.today().isoformat()}
 *Beep boop. 🤖*
 """
 
-# Save to file
-with open("dependabot-diary.md", "w") as f:
-    f.write(entry)
-  
-print(f"Diary entry written to dependabot-diary.md")
-EOF
-          
-          # Move to the correct location
-          mv dependabot-diary.md "$DIARY_FILE"
-          echo "📓 Diary entry created: $DIARY_FILE"
-      
-      - name: Create special README for diary
-        if: steps.check_diary.outputs.dependabot_wrote_today == 'false'
+os.makedirs(os.path.dirname(DIARY_FILE), exist_ok=True)
+with open(DIARY_FILE, 'w', encoding='utf-8') as fh:
+    fh.write(entry)
+
+print(f"Diary entry written to {DIARY_FILE}")
+PY
+
+      - name: Validate generated diary
+        if: steps.set_date.outputs.dependabot_wrote_today == 'false'
         run: |
-          cat > dependabot-diary/README.md << 'EOF'
+          DIARY=dependabot-diary/${{ steps.set_date.outputs.today }}.md
+          if [ ! -f "$DIARY" ]; then
+            echo "ERROR: diary file missing: $DIARY" >&2
+            exit 1
+          fi
+          if [ ! -s "$DIARY" ]; then
+            echo "ERROR: diary file empty: $DIARY" >&2
+            exit 1
+          fi
+          if ! grep -q "^# Dependabot's Diary - ${{ steps.set_date.outputs.today }}" "$DIARY"; then
+            echo "ERROR: expected header not found in $DIARY" >&2
+            exit 1
+          fi
+
+      - name: Ensure README exists
+        if: steps.set_date.outputs.dependabot_wrote_today == 'false'
+        run: |
+          cat > dependabot-diary/README.md <<'EOF'
 # 📓 Dependabot's Emotional Support Diary
 
-Welcome to Dependabot's personal diary! This is a safe space where our favorite
-dependency updater can express itself, vent, tell jokes, or just share random thoughts.
+This directory contains auto-generated diary entries for Dependabot. Entries are generated for the Adelaide local date and added via a pull request for maintainers to review.
 
-## How It Works
-- Every day at 3:00 PM UTC, this workflow checks if Dependabot has created a file
-- If not, it generates a new diary entry with random content
-- Entries are stored as `YYYY-MM-DD.md` files in this directory
-
-## Why?
-Because maintaining dependencies is hard work, and even bots need emotional support!
-
-## Viewing Entries
-All diary entries are Markdown files. Just click on any date to read Dependabot's
-thoughts from that day.
-
-## Manual Trigger
-You can manually trigger a diary entry by:
-1. Going to the "Actions" tab in this repository
-2. Selecting "Dependabot's Daily Journal"
-3. Clicking "Run workflow"
-
----
-*"I update dependencies, therefore I am." - Dependabot*
+If you prefer automatic merging, configure a merge automation or allow dependabot workflow pushes (not recommended for protected branches without careful consideration).
 EOF
-      
-      - name: Commit and push diary entry
-        if: steps.check_diary.outputs.dependabot_wrote_today == 'false'
+
+      - name: Create branch and commit changes as dependabot[bot]
+        if: steps.set_date.outputs.dependabot_wrote_today == 'false'
+        env:
+          TODAY: ${{ steps.set_date.outputs.today }}
         run: |
-          git config --local user.email "dependabot@github.com"
-          git config --local user.name "Dependabot's Emotional Support System"
-          
+          BRANCH=dependabot-diary/${TODAY}
+          git config user.name "dependabot[bot]"
+          git config user.email "41898282+dependabot[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
           git add dependabot-diary/
-          git commit -m "Add Dependabot diary entry for ${{ steps.check_diary.outputs.today }}"
-          
-          # Push changes
-          git push origin HEAD:${{ github.ref_name }}
-      
-      - name: Skip (already wrote today)
-        if: steps.check_diary.outputs.dependabot_wrote_today == 'true'
-        run: |
-          echo "No diary entry needed today. Dependabot already expressed itself. 👍"
+          if git diff --cached --quiet; then
+            echo "No changes to commit; exiting (nothing new to PR)."
+            exit 0
+          fi
+          git commit -m "Add Dependabot diary entry for ${TODAY}"
+
+      - name: Push branch and open pull request
+        if: steps.set_date.outputs.dependabot_wrote_today == 'false'
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: dependabot-diary/${{ steps.set_date.outputs.today }}
+          title: "Add Dependabot diary entry for ${{ steps.set_date.outputs.today }}"
+          body: |
+            This PR adds an auto-generated diary entry for Dependabot for the Adelaide date ${{ steps.set_date.outputs.today }}.
+
+            - Generated deterministically from the Adelaide local date (so content is reproducible)
+            - Commit author set to dependabot[bot]
+          base: ${{ github.ref_name }}
+
+EOF
+
+# stage workflow file
+git add .github/workflows/dependabot-diary.yml
+
+# commit with dependabot[bot] author identity
+git commit -m "Add Dependabot diary workflow (Adelaide-local, PR-based)" --author="dependabot[bot] <41898282+dependabot[bot]@users.noreply.github.com>"
+
+# push branch to origin
+git push -u origin "$BRANCH"
+
+# create a PR using GH CLI (recommended)
+# ensure you've authenticated with 'gh auth login' first
+gh pr create --title "Add Dependabot diary workflow (Adelaide date)" --body "Adds a PR-based Dependabot diary workflow that generates deterministic diary entries using the Australia/Adelaide local date." --base main --head "$BRANCH"
