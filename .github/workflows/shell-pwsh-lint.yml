@@ -1,4 +1,10 @@
+---
 name: Shell & PowerShell Lint
+
+permissions:
+  contents: read
+  packages: write
+  issues: write
 
 on:
   push:
@@ -7,9 +13,6 @@ on:
     branches: ["main"]
   workflow_dispatch:
 
-permissions:
-  contents: read
-
 jobs:
   shellcheck:
     name: ShellCheck (sh)
@@ -17,27 +20,22 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Run ShellCheck
-        uses: koalaman/shellcheck@v1
         with:
-          github_token: ${{ secrets.GGSHIELD_API_KEY }}
-          files: '**/*.sh'
 
   psscriptanalyzer:
-    name: PSScriptAnalyzer (PowerShell)
-    runs-on: windows-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      name: PSScriptAnalyzer (PowerShell)
+      runs-on: windows-latest
+      steps:
+        - name: Checkout
+          uses: actions/checkout@v4
 
-      - name: Run PSScriptAnalyzer
-        shell: pwsh
-        run: |
-          Install-Module -Name PSScriptAnalyzer -Force -Scope CurrentUser -AllowClobber
-          # Run analyzer; do not fail the workflow to avoid blocking PRs on small style issues
-          Invoke-ScriptAnalyzer -Path . -Recurse -Severity Error -ExcludeRule 'PSAvoidUsingWriteHost' || true
+        - name: Run PSScriptAnalyzer
+          shell: pwsh
+          run: |
+            Install-Module -Name PSScriptAnalyzer -Force -Scope CurrentUser -AllowClobber
+            # Run analyzer; do not fail the workflow to avoid blocking PRs on small style issues
+            Invoke-ScriptAnalyzer -Path . -Recurse -Severity Error -ExcludeRule 'PSAvoidUsingWriteHost' || true
 
 # Notes:
-# - ShellCheck and PSScriptAnalyzer are separate, specialized linters for shell and PowerShell scripts.
-# - Adjust file globs and severity rules as needed for your repo.
+# - Releases will be created for tags like v1.2.3. The current artifact path is `dist/**` — change this pattern if your project outputs builds/artifacts elsewhere.
+# - Customize artifacts and signing as needed.

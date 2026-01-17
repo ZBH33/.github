@@ -44,11 +44,14 @@ repos:
         language_version: python3
         stages: [pre-commit]
 
-# Notes:
-# - This config focuses on safe, low-friction checks for a solo-maintained repo.
-# - For more stringent python checks, change configuration to match your project and pin to desired versions.
-# - The detect-secrets hook requires you to generate a baseline: `detect-secrets scan > .secrets.baseline`
-# - Do not store real secrets in this repo; rely on GitHub Secrets for credentials/tokens.
+repos:
+  - repo: https://github.com/gitguardian/ggshield
+    rev: v1.46.0
+    hooks:
+      - id: ggshield-push
+        language_version: python3
+        stages: [pre-push]
+
 
 # Notes:
 # - This config focuses on safe, low-friction checks for a solo-maintained repo.
