@@ -22,4 +22,3 @@ build/** export-ignore
 
 # Keep repository placeholder env file tracked (document-only)
 # If you'd prefer it excluded from source archives, uncomment below:
-# .repo-env export-ignore

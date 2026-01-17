@@ -70,5 +70,4 @@ secrets.txt
 
 # Document-only environment placeholder removed (sensitive values should NOT be stored in the repo)
 # If you need a local .repo-env for testing, add it to .gitignore locally, e.g.:
-# .github/.repo-env
 # Prefer storing sensitive values in GitHub Secrets.

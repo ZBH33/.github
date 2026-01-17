@@ -1,4 +1,4 @@
-name: Security — GitGuardian (ggshield) scan
+name: ggshield
 
 on:
   push:
@@ -19,7 +19,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
+        
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
@@ -32,6 +32,7 @@ jobs:
 
       - name: Run ggshield scan
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GGSHIELD_API_KEY: ${{ secrets.GGSHIELD_API_KEY }}
         run: |
           if [ -n "${GGSHIELD_API_KEY}" ]; then
